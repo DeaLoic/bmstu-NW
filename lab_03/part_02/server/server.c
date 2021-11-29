@@ -17,6 +17,10 @@
 int fd_socket;
 
 int clients[MAX_CLIENTS] = { 0 };
+typedef struct data_t {
+    char* request;
+    int id;
+} data_t;
 
 void sigint_catcher(int signum)
 {
@@ -32,27 +36,36 @@ char* get_extention(char* filename)
     return dot + 1;
 }
 
-int handle_request(char *request, int client)
+int handle_request(void *data)
 {
-    std::string debug(msg);
-    char *method = strtok(msg, " ");
+    int client = ((data_t*)data)->id;
+    char* request = ((data_t*)data)->request;
+
+    char *method = strtok(request, " ");
     char *path = strtok(NULL, " /");
     char *version = strtok(NULL, " \r\n");
-    char user[50];
     
     if (strcmp(method, "GET"))
     {
         return -1;
     }
 
+    printf("Method: %s, path: %s, version: %s\n", method, path, version);
+
     int rc = 0;
     char *status, *status_code;
-    char *body = malloc(MSG_MAX_LEN);
+    char *body = malloc(MSG_MAX_LEN + 1000);
     char *content_type = "text/html";
 
-    char *response = malloc(MSG_MAX_LEN);
-    body[0] = "\0";
-    FILE *fl = fopen(strcat(PATH_ROOT, path), "rb");
+    char *response = malloc(MSG_MAX_LEN + 1000);
+    char *filename = malloc(MSG_MAX_LEN);
+    body[0] = '\0';
+    strcpy(filename, PATH_ROOT);
+    strcpy(filename + strlen(filename), path);
+    
+    printf("File: %s", filename);
+    
+    FILE *fl = fopen(filename, "rb");
     if (fl)
     {
         char *ext = get_extention(filename);
@@ -66,38 +79,54 @@ int handle_request(char *request, int client)
             content_type = "application/json";
         }
 
-        char* buf = char[100];
-        while (!feof(fl) && fread(buf, 1, 100, fl) != 0)
+        char buf[101];
+        while (!feof(fl))
         {
-            strcpy(body + strlen(body), buf);
+            int size = fread(buf, 1, 100, fl);
+            if (size != 0)
+            {
+                buf[size] = '\0';
+                strcpy(body + strlen(body), buf);
+            } else
+            {
+                break;
+            }
         }
-        strcpy(body + strlen(body), "\0");
+        
         status_code = "200";
         status = "OK";
     }
     else
     {
-        rc = -2;
+        rc = 1;
         status_code = "404";
         status = "Not Found";
         body = "<html>\n\r<body>\n\r<h1>404 Not Found</h1>\n\r</body>\n\r</html>";
     }
+    
     strcpy(response, version);
     strcpy(response + strlen(response), " ");
     strcpy(response + strlen(response), status_code);
     strcpy(response + strlen(response), " \r\nContent-Length: ");
-    strcpy(response + strlen(response), strlen(body));
+    sprintf(response + strlen(response), "%d", strlen(body));
+    //strcpy(response + strlen(response), strlen(body));
     strcpy(response + strlen(response), "\r\nConnection: closed\r\nContent-Type: ");
     strcpy(response + strlen(response), content_type);
     strcpy(response + strlen(response), "; charset=UTF-8\r\n\r\n");
     strcpy(response + strlen(response), body);
 
-    send(clients[client], response.c_str(), response.size(), 0);
+    printf("Response: %s", response);
+
+    send(clients[client], response, strlen(response), 0);
 
     if (rc)
-        printf("Client #%d has sent an invalid message.\n", client);
+    {
+        printf("Invalid request from client %d.\n", client);
+    }
     else
+    {
         printf("Successfully handled a request from client #%d\n", client);
+    }
     return rc;
 }
 
@@ -110,17 +139,16 @@ int register_client(unsigned int socket)
     }
     if (i < MAX_CLIENTS)
     {
-        clients[i] = clientfd;
-        printf("Register client %d\n\n", i);
+        clients[i] = socket;
+        printf("Register client %d %d\n\n", i, socket);
         return 0;
     }
-    return 1;
+    return 0;
 }
 
 int main()
 {
-    printf("Server starting ...\n");
-    chdir(FILES_DIR);
+    printf("Server starting\n");
 
     fd_socket = socket(AF_INET, SOCK_STREAM, 0);
 
@@ -140,14 +168,14 @@ int main()
         return errno;
     }
  
-    if (listen(fd_socket, MAX_COUNT) < 0) {
+    if (listen(fd_socket, MAX_CLIENTS) < 0) {
         printf("Failed listen socket: %s\n", strerror(errno));
         close(fd_socket);
         return errno;
     }
 
-    printf("Server running ...\n");
-    int client_sockets[MAX_COUNT] = {0};
+    printf("Waiting for connection\n");
+    int client_sockets[MAX_CLIENTS] = {0};
     int client_socket = 0;
     while (1) {
         fd_set rfds;
@@ -155,12 +183,12 @@ int main()
         FD_SET(fd_socket, &rfds);
         int max_fd = fd_socket;
         for (int i = 0; i < MAX_CLIENTS; i++) {
-            int fd = client_sockets[i];
+            int fd = clients[i];
             if (fd > 0)
                 FD_SET(fd, &rfds);
             max_fd = (fd > max_fd) ? (fd) : (max_fd);
         }
-        int updates_cl_count = pselect(max_fd + 1, &rfds, NULL, NULL, NULL, NULL);
+        int updates_cl_count = select(max_fd + 1, &rfds, NULL, NULL, NULL);
         if (FD_ISSET(fd_socket, &rfds)) {
             struct sockaddr_in client_addr;
             int client_addr_size = sizeof(client_addr);
@@ -169,20 +197,26 @@ int main()
                 printf("Failed accept: %s", strerror(errno));
                 close(fd_socket);
                 return errno;
-            }
-            printf("New client: fd = %d, address = %s:%d\n", accepted_socket, inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));
+            }   
+            printf("\nNew client: fd = %d, %d, address = %s:%d\n\n", accepted_socket, clients[0], inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));
             
         }
         char request[MSG_MAX_LEN];
         for (int i = 0; i < MAX_CLIENTS; i++) {
-            int fd = client_sockets[i];
+            int fd = clients[i];
             if ((fd > 0) && FD_ISSET(fd, &rfds)) {
-                if (recv(fd, request, MSG_MAX_LEN) <= 0) {
-                    client_sockets[i] = 0;
+                if (recv(fd, request, MSG_MAX_LEN, 0) <= 0) {
+                    printf("\nClient disconnected: fd = %d\\nn", fd);
+                    clients[i] = 0;
                     close(fd);
-                    printf("Client disconnected: fd = %d\n", fd);
                 } else {
-                    thread (request, i)
+                    printf("\nGet request from fd = %d, id = %d\n", fd, i);
+                    printf("Request: %s\n", request);
+                    data_t data = {request, i};
+                    pthread_t thread_id;
+                    int s = 0;
+                    handle_request(&data);
+                    //pthread_create(&thread_id, NULL, handle_request, (void*)&data);
                 }
             }
         }

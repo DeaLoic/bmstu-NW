@@ -10,9 +10,10 @@
 
 #define SERVER_HOST "localhost"
 #define SERVER_PORT 8888
-#define MSG_MAX_LEN 512
+#define MSG_MAX_LEN (512 * 1000)
 #define PACKET_SIZE 1024
 #define MAX_CLIENTS 5
-#define PATH_ROOT "/root"
+#define PATH_ROOT "./data/"
+//#define PATH_ROOT "/home/pashok/Desktop/bmstu/sem_7/bmstu-NW/lab_03/part_02/server/data"
 
 #endif // __COMMON_H__
