@@ -1,0 +1,93 @@
+\documentclass[12pt, a4paper]{extarticle}
+\usepackage{GOST}
+
+\makeatletter
+\renewcommand\@biblabel[1]{#1.}
+\makeatother
+
+
+\graphicspath{{images/}}
+
+\begin{document}
+\input{0_title.tex}
+\section{Задание}
+
+Для общей сети был выделен частный адрес 192.168.x.0/24
+
+Задачи:
+\begin{enumerate}
+\item Разделить сеть на 5 подсетей
+	 \begin{enumerate}
+	\item Подсети 1 и 5 должны поддерживать до 10 +  x устройств
+	\item Подсети 2 и 4 должны поддерживать до 5 устройств
+	\item Подсеть 3 должна поддерживать 2 устройства
+	\end{enumerate}
+
+	Где x - Ваш номер по списку в ЭУ
+
+	Использовать не более трех подсетей с возможностью размещения x + 10 хостов
+
+\item Настроить  DHCP-сервера для выдачи адресов
+ 	\begin{enumerate}
+	\item Для подсети 1 настроить отдельный DHCP сервер	
+	\item Для подсети 2 настроить в качестве DHCP-сервера маршрутизатор 1
+	\item Для подсетей 4 и 5 настроить в качестве DHCP-сервера маршрутизатор 2
+	\end{enumerate}
+\end{enumerate}
+
+\section{Результаты}
+Подсети 1 и 5 в моем варианте должны поддерживать 14 + 10 = 24 хоста. \\
+Сначала были выделены подсети 1 и 5, затем 2 и 4, последней была выделена подсеть 3. Выделение происходило в порядке убывания числа хостов. Не учитывались адрес сети и широковещательный домен при определении кол-ва хостов.
+\begin{table}[H]
+	\centering
+	\caption{Адреса подсетей}
+	\begin{tabular}{| c |  c | c | c |}
+	\hline
+	Номер подсети & Адрес сети & Маска подсети & Кол-во хостов \\ \hline
+	1 & 192.168.14.0 & 255.255.255.224 & 30 \\ \hline
+	5 & 192.168.14.32 & 255.255.255.224  & 30 \\ \hline
+	2 & 192.168.14.64 & 255.255.255.248 & 6 \\ \hline
+	4 & 192.168.14.72 & 255.255.255.248 & 6 \\ \hline
+	3 & 192.168.14.60 & 255.255.255.252 & 2 \\
+	\hline
+	\end{tabular}
+\end{table}
+Шлюзам по умолчанию выдавался первый адрес из диапазона.
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[scale=0.9]{images/router1.png}
+	\caption{Настройка интерфейса для подсети 1 на роутере 1}
+\end{figure}
+
+Настройка DHCP.
+\begin{figure}[H]
+	\centering
+	\includegraphics[scale=0.9]{images/dhcp.png}
+	\caption{Настройка DHCP сервера}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[scale=0.9]{images/dhcp-set.png}
+	\caption{Настройка DHCP на роутере 2 для подсетей 4 и 5}
+\end{figure}
+
+Для связи подсетей за роутером 1 и подсетей за роутером 2 были добавлены статические пути на роутере 1 и 2.
+\begin{figure}[H]
+	\centering
+	\includegraphics[scale=0.9]{images/static.png}
+	\caption{Статический путь на роутере 1}
+\end{figure}
+
+В результате все подсети пингуются.
+\begin{figure}[H]
+	\centering
+	\includegraphics[scale=0.9]{images/ping.png}
+	\caption{Пинг из подсети 1}
+\end{figure}
+\end{document}
+
+
+
+

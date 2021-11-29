@@ -1,0 +1,125 @@
+\documentclass[12pt, a4paper]{extarticle}
+\usepackage{GOST}
+\usepackage{array}
+\usepackage{verbatim}
+\usepackage[detect-all]{siunitx}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage[utf8]{inputenc}
+\usepackage{hyperref}
+\usepackage{float}
+\makeatletter
+\renewcommand\@biblabel[1]{#1.}
+\makeatother
+
+\usepackage{listings}
+\lstset{ 
+	language=C,
+	basicstyle=\small\sffamily, 
+	numbers=left, 
+	numberstyle=\tiny,
+	stepnumber=1,
+	numbersep=5pt,
+	showspaces=false,            
+	showstringspaces=false,      
+	showtabs=false,             
+	frame=single,            % рисовать рамку вокруг кода
+	tabsize=4,      
+	commentstyle=\color{green},
+	keywordstyle=\color{blue}\textbf,
+	numberstyle=\scriptsize\color{gray}, % the style that is used for the line-numbers
+	rulecolor=\color{black},
+	captionpos=t,
+	breaklines=true,         % автоматически переносить строки 
+	breakatwhitespace=false, % переносить строки по пробелу
+	escapeinside={\#*}{*)} 
+}
+\graphicspath{{images/}}
+
+\begin{document}
+\input{0_title.tex}
+
+\section*{Задание}
+\begin{enumerate}
+\item Присвоить портам устройств статические ipv4 адреса в соответствии с вариантом
+\item Настроить безопасный доступ к коммутаторам и маршрутизатору
+\item Указать адреса портов маршрутизатора как адрес шлюза по умолчанию для конечных узлов
+\item Настроить DNS сервер
+\item Указать адрес DNS сервера для конечных узлов
+\item Настроить почтовый сервер SMTP и POP3
+\item Добавить почтовые записи на DNS - сервер 
+\item Настроить почтовый клиент на всех ПК
+\item Настроить HTTP сервер, разместить там тестовую страницу с номером варианта, фамилией, номером группы, датой выполнения работы.
+\item Проверить корректное прохождение сигнала между всеми узлами сети, доступность   
+настроенных сервисов со стороны клиентов на ПК 
+\item Отметить широковещательные домены и домены коллизий на схеме
+ \end{enumerate}
+Адрес ПК (сеть 1): 10.1.x.y 255.255.255.0 
+Адрес DNS сервера (сеть 2): 192.168.x.y 255.255.255.0
+Адрес HTTP и SMTP серверов (сеть 3): 172.16.x.y 255.255.255.0
+
+x - Ваш номер по списку в Электронном Университете, y -порядковый номер от 1 и выше
+
+
+\newpage
+\section{Результаты}
+\begin{figure}[H]
+	\centering
+	\includegraphics[scale=0.7]{images/pc1.png}
+	\caption{Настройка интерфеса}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[scale=0.7]{images/pc2.png}
+	\caption{Настройка дефолтного шлюза}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[scale=0.7]{images/dns.png}
+	\caption{Настройка DNS}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[scale=0.7]{images/sec.png}
+	\caption{Настройка безопасного доступа}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[scale=0.7]{images/smtp.png}
+	\caption{Настройка SMTP-сервера}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[scale=0.7]{images/http.png}
+	\caption{Изменение страницы на HTTP-сервере}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[scale=0.7]{images/smtp-check.png}
+	\caption{Проверка SMTP-сервера}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[scale=0.7]{images/http-check.png}
+	\caption{Проверка HTTP-сервера}
+\end{figure}
+
+Домены. Красным - широковещательные, синим - домены коллизий.
+\begin{figure}[H]
+	\centering
+	\includegraphics[scale=0.7]{images/domens.png}
+	\caption{Домены}
+\end{figure}
+
+\end{document}
+
+
+
+
