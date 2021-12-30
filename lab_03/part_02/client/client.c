@@ -12,22 +12,35 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <math.h>
+#include <signal.h>
 #include "../common.h"
+
+int fd_socket;
+void sigint_catcher(int signum)
+{
+    printf("Ctrl+C caught - closing socket \n");
+    close(fd_socket);
+    exit(0);
+}
 
 char* form_request(char* path)
 {
-    char* get = "GET ";
+    char* get = "GET /";
     char* http_version = " HTTP/1.1\r\n";
     char* request = malloc((strlen(path) + strlen(get) + strlen(http_version) + 1) * sizeof(char));
     strcpy(request, get);
+    printf(" Req: %s\n", request);
     strcpy(request + strlen(get), path);
+    printf(" Req: %s\n", request);
     strcpy(request + strlen(get) + strlen(path), http_version);
+    printf(" Req: %s\n", request);
     return request;
 }
 
 int main(int argc, char **argv)
 {
-    int fd_socket = socket(AF_INET, SOCK_STREAM, 0);
+    fd_socket = socket(AF_INET, SOCK_STREAM, 0);
+    signal(SIGINT, sigint_catcher);
     if (fd_socket < 0) {
         printf("Failed create socket: %s\n", strerror(errno));
         return -errno;
@@ -65,17 +78,29 @@ int main(int argc, char **argv)
             size--;
         }
         
-        if (send(fd_socket, form_request(path), size, 0) < 0) {
+        char* req = form_request(path);
+        if (send(fd_socket, req, strlen(req), 0) < 0) {
             printf("Failed send to server: %s", strerror(errno));
             return errno;
         }
         
         char buf[MSG_MAX_LEN];
-        if (recv(sock, buf, MSG_MAX_LEN, 0) < 0)
+        int readed = MSG_MAX_LEN - 1;
+        while (readed == MSG_MAX_LEN - 1)
+        {
+            readed = recv(fd_socket, buf, MSG_MAX_LEN - 1, 0);
+            printf("resded: %d", readed);
+            buf[readed] = '\0';
+            if (readed > 0) 
+            {
+                printf("%s", buf);
+            }
+        }
+        if (readed < 0)
+        {
             printf("Failed to recv from server: %s", strerror(errno));
             return errno;
-
-        printf("Client has recieved an answer:\n\n%s", buf);
+        }
     }
     
     close(fd_socket);
